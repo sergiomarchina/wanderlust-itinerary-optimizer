@@ -1,9 +1,25 @@
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Map, Calendar, Plane, Star, Navigation as NavigationIcon, Users } from "lucide-react";
+import { useItineraryStore } from "@/store/itineraryStore";
 
 export function Dashboard() {
+  const navigate = useNavigate();
+  const { currentTrip } = useItineraryStore();
+
+  const handleContinueTrip = () => {
+    navigate('/itinerary');
+  };
+
+  const handleNewItinerary = () => {
+    navigate('/itinerary');
+  };
+
+  const handleDiscover = () => {
+    navigate('/discover');
+  };
   return (
     <div className="space-y-6">
       {/* Hero Section */}
@@ -11,7 +27,7 @@ export function Dashboard() {
         <div className="relative z-10">
           <h1 className="text-3xl font-bold mb-2">Benvenuto in TravelMate</h1>
           <p className="text-white/90 mb-6">Il tuo assistente di viaggio intelligente</p>
-          <Button variant="hero" size="lg" className="bg-white/15 text-white border border-white/25 hover:bg-white/25 backdrop-blur-sm">
+          <Button variant="hero" size="lg" className="bg-white/15 text-white border border-white/25 hover:bg-white/25 backdrop-blur-sm" onClick={handleNewItinerary}>
             <NavigationIcon className="mr-2 h-5 w-5" />
             Inizia nuovo viaggio
           </Button>
@@ -37,14 +53,14 @@ export function Dashboard() {
         <CardContent>
           <div className="space-y-4">
             <div>
-              <h3 className="font-semibold text-lg">Tour della Toscana</h3>
+              <h3 className="font-semibold text-lg">{currentTrip?.name || 'Tour della Toscana'}</h3>
               <p className="text-muted-foreground">15-22 Luglio 2024 • 7 giorni</p>
             </div>
             
             <div className="flex items-center space-x-4 text-sm text-muted-foreground">
               <div className="flex items-center gap-1">
                 <Map className="h-4 w-4" />
-                <span>5 città</span>
+                <span>{currentTrip?.days[0]?.items.length || 5} città</span>
               </div>
               <div className="flex items-center gap-1">
                 <Star className="h-4 w-4" />
@@ -57,11 +73,11 @@ export function Dashboard() {
             </div>
 
             <div className="flex gap-3 pt-2">
-              <Button variant="gradient" className="flex-1">
+              <Button variant="gradient" className="flex-1" onClick={handleContinueTrip}>
                 <NavigationIcon className="mr-2 h-4 w-4" />
                 Continua
               </Button>
-              <Button variant="outline" className="flex-1">
+              <Button variant="outline" className="flex-1" onClick={() => navigate('/itinerary')}>
                 <Calendar className="mr-2 h-4 w-4" />
                 Modifica
               </Button>
@@ -72,7 +88,7 @@ export function Dashboard() {
 
       {/* Quick Actions */}
       <div className="grid grid-cols-2 gap-4">
-        <Card className="shadow-card-custom hover:shadow-travel transition-all duration-300 cursor-pointer group border-0 bg-card/60 backdrop-blur-sm">
+        <Card className="shadow-card-custom hover:shadow-travel transition-all duration-300 cursor-pointer group border-0 bg-card/60 backdrop-blur-sm" onClick={handleNewItinerary}>
           <CardContent className="p-6">
             <div className="flex flex-col items-center text-center space-y-3">
               <div className="p-3 bg-gradient-adventure rounded-xl shadow-travel group-hover:shadow-glow transition-all duration-300">
@@ -86,7 +102,7 @@ export function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="shadow-card-custom hover:shadow-travel transition-all duration-300 cursor-pointer group border-0 bg-card/60 backdrop-blur-sm">
+        <Card className="shadow-card-custom hover:shadow-travel transition-all duration-300 cursor-pointer group border-0 bg-card/60 backdrop-blur-sm" onClick={handleDiscover}>
           <CardContent className="p-6">
             <div className="flex flex-col items-center text-center space-y-3">
               <div className="p-3 bg-gradient-sunset rounded-xl shadow-travel group-hover:shadow-glow transition-all duration-300">
