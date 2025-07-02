@@ -70,6 +70,14 @@ export default {
 				'gradient-sunset': 'var(--gradient-sunset)',
 				'gradient-hero': 'var(--gradient-hero)'
 			},
+			backgroundColor: {
+				'glass-light': 'var(--glass-light)',
+				'glass-medium': 'var(--glass-medium)',
+				'glass-dark': 'var(--glass-dark)'
+			},
+			backdropBlur: {
+				'glass': 'var(--backdrop-blur)'
+			},
 			boxShadow: {
 				'travel': 'var(--shadow-travel)',
 				'card-custom': 'var(--shadow-card)',

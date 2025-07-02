@@ -14,7 +14,7 @@ export function Navigation() {
   const location = useLocation();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border backdrop-blur-lg bg-card/80 lg:hidden">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/80 backdrop-blur-lg border-t border-border/50">
       <div className="flex items-center justify-around h-16 px-4">
         {navigationItems.map((item) => {
           const isActive = location.pathname === item.href;
