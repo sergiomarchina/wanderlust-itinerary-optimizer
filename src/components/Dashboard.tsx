@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Map, Calendar, Plane, Star, Navigation as NavigationIcon, Users } from "lucide-react";
 import { useItineraryStore } from "@/store/itineraryStore";
+import { ItineraryImporter } from "@/components/ItineraryImporter";
 
 export function Dashboard() {
   const navigate = useNavigate();
@@ -87,7 +88,7 @@ export function Dashboard() {
       </Card>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <Card className="shadow-card-custom hover:shadow-travel transition-all duration-300 cursor-pointer group border-0 bg-card/60 backdrop-blur-sm" onClick={handleNewItinerary}>
           <CardContent className="p-6">
             <div className="flex flex-col items-center text-center space-y-3">
@@ -111,6 +112,20 @@ export function Dashboard() {
               <div>
                 <h3 className="font-semibold">Scopri</h3>
                 <p className="text-sm text-muted-foreground">Trova nuovi luoghi incredibili</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-card-custom hover:shadow-travel transition-all duration-300 border-0 bg-card/60 backdrop-blur-sm">
+          <CardContent className="p-6">
+            <div className="flex flex-col items-center text-center space-y-3">
+              <div className="p-3 bg-gradient-primary rounded-xl shadow-travel transition-all duration-300">
+                <Plane className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <h3 className="font-semibold mb-2">Importa</h3>
+                <ItineraryImporter />
               </div>
             </div>
           </CardContent>
