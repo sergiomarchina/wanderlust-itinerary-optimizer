@@ -18,9 +18,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Calendar, Map, Star, Navigation as NavigationIcon, Plus, Search, RotateCcw } from "lucide-react";
+import { Calendar, Map, Star, Navigation as NavigationIcon, Plus, Search, RotateCcw, Share2 } from "lucide-react";
 import { useItineraryStore } from "@/store/itineraryStore";
 import { DraggableItineraryItem } from "@/components/DraggableItineraryItem";
+import { WeatherWidget } from "@/components/WeatherWidget";
+import { ExpenseTracker } from "@/components/ExpenseTracker";
 import { toast } from "sonner";
 
 export default function Itinerary() {
@@ -71,6 +73,19 @@ export default function Itinerary() {
     }, 2000);
   };
 
+  const shareItinerary = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: currentTrip?.name || 'Il mio itinerario',
+        text: `Guarda il mio itinerario di viaggio: ${currentTrip?.name}`,
+        url: window.location.href,
+      });
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+      toast.success("Link copiato negli appunti!");
+    }
+  };
+
   const totalDuration = currentDay.items.reduce((total, item) => {
     const hours = parseInt(item.duration.split(' ')[0]);
     return total + (isNaN(hours) ? 1 : hours);
@@ -86,6 +101,8 @@ export default function Itinerary() {
 
   return (
     <div className="space-y-6">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <div className="xl:col-span-2 space-y-6">
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
@@ -103,6 +120,10 @@ export default function Itinerary() {
           <Button variant="outline">
             <Calendar className="mr-2 h-4 w-4" />
             Cambia data
+          </Button>
+          <Button variant="outline" onClick={shareItinerary}>
+            <Share2 className="mr-2 h-4 w-4" />
+            Condividi
           </Button>
           <Button variant="gradient">
             <Plus className="mr-2 h-4 w-4" />
@@ -200,7 +221,15 @@ export default function Itinerary() {
             </div>
           </div>
         </CardContent>
-      </Card>
+        </Card>
+        </div>
+
+        {/* Weather and Expenses Sidebar */}
+        <div className="space-y-6">
+          <WeatherWidget />
+          <ExpenseTracker />
+        </div>
+      </div>
     </div>
   );
 }

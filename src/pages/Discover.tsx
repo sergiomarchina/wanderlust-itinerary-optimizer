@@ -4,7 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Star, Map, Calendar, Users } from "lucide-react";
+import { Search, Star, Map, Calendar, Users, Plus } from "lucide-react";
+import { useItineraryStore } from "@/store/itineraryStore";
+import { toast } from "sonner";
 
 const places = [
   {
@@ -64,6 +66,41 @@ const categories = [
 export default function Discover() {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
+  const { addItineraryItem, currentTrip } = useItineraryStore();
+
+  const addToItinerary = (place: any) => {
+    if (!currentTrip || !currentTrip.days[0]) {
+      toast.error("Nessun viaggio attivo trovato");
+      return;
+    }
+
+    const newItem = {
+      id: Date.now().toString(),
+      name: place.name,
+      time: "14:00", // Default time
+      duration: place.duration,
+      type: place.category,
+      rating: place.rating,
+      image: place.image,
+      location: {
+        lat: 43.7731, // Default coordinates
+        lng: 11.2560,
+        address: place.location
+      },
+      estimatedCost: place.price
+    };
+
+    addItineraryItem(currentTrip.days[0].id, newItem);
+    toast.success(`${place.name} aggiunto all'itinerario!`);
+  };
+
+  const filteredPlaces = places.filter(place => {
+    const matchesSearch = place.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         place.location.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = activeCategory === "all" || 
+                           place.category.toLowerCase().includes(activeCategory.toLowerCase());
+    return matchesSearch && matchesCategory;
+  });
 
   return (
     <div className="space-y-6">
@@ -118,7 +155,7 @@ export default function Discover() {
 
         <TabsContent value="recommendations" className="space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {places.map((place) => (
+            {filteredPlaces.map((place) => (
               <Card key={place.id} className="shadow-card-custom hover:shadow-travel transition-all duration-300 cursor-pointer group border-0">
                 <CardContent className="p-6">
                   <div className="flex items-start space-x-4">
@@ -148,8 +185,8 @@ export default function Discover() {
                       </div>
 
                       <div className="flex gap-2">
-                        <Button size="sm" variant="gradient" className="flex-1">
-                          <Map className="mr-2 h-4 w-4" />
+                        <Button size="sm" variant="gradient" className="flex-1" onClick={() => addToItinerary(place)}>
+                          <Plus className="mr-2 h-4 w-4" />
                           Aggiungi all'itinerario
                         </Button>
                         <Button size="sm" variant="outline">
