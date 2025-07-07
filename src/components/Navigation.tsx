@@ -1,7 +1,10 @@
 import { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { Map, Calendar, Navigation as NavigationIcon, Settings, Users, Star } from "lucide-react";
+import { Map, Calendar, Navigation as NavigationIcon, Settings, Users, Star, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 
 const navigationItems = [
   { href: "/", label: "Dashboard", icon: Map },
@@ -42,6 +45,15 @@ export function Navigation() {
 export function DesktopNavigation() {
   const location = useLocation();
 
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      toast.success("Logout effettuato con successo!");
+    } catch (error: any) {
+      toast.error("Errore durante il logout: " + error.message);
+    }
+  };
+
   return (
     <aside className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0">
       <div className="flex flex-col flex-grow pt-6 bg-card border-r border-border">
@@ -77,6 +89,17 @@ export function DesktopNavigation() {
               );
             })}
           </nav>
+          
+          <div className="px-4 pb-4">
+            <Button
+              onClick={handleLogout}
+              variant="outline"
+              className="w-full flex items-center justify-center"
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              Logout
+            </Button>
+          </div>
         </div>
       </div>
     </aside>
