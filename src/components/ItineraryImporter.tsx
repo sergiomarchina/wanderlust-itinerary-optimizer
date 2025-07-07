@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { Upload, FileText, X, Check, AlertCircle } from "lucide-react";
-import { useItineraryStore } from "@/store/itineraryStore";
+import { useCreateTrip } from "@/hooks/useTrips";
 import { ItineraryItem, TravelDay, Trip } from "@/types/itinerary";
 import { toast } from "sonner";
 
@@ -24,7 +24,7 @@ export function ItineraryImporter() {
     progress: 0,
     message: ""
   });
-  const { addTrip, setCurrentTrip } = useItineraryStore();
+  const createTrip = useCreateTrip();
 
   const parseJsonItinerary = (content: string): Trip | null => {
     try {
@@ -194,15 +194,13 @@ export function ItineraryImporter() {
       setImportStatus({ isImporting: true, progress: 80, message: "Importazione..." });
       
       if (trip) {
-        addTrip(trip);
-        setCurrentTrip(trip);
+        await createTrip.mutateAsync(trip);
         setImportStatus({ 
           isImporting: false, 
           progress: 100, 
           message: "Importazione completata!", 
           success: true 
         });
-        toast.success(`Itinerario "${trip.name}" importato con successo!`);
         setTimeout(() => setIsOpen(false), 2000);
       } else {
         setImportStatus({ 
@@ -287,12 +285,12 @@ export function ItineraryImporter() {
                   {isDragOver ? "Rilascia il file qui!" : "Trascina il file qui"}
                 </h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Supporta JSON, CSV e file di testo
+                  Supporta JSON, CSV, Excel, TXT e molti altri formati
                 </p>
                 <div className="space-y-2">
                   <input
                     type="file"
-                    accept=".json,.csv,.txt"
+                    accept=".json,.csv,.txt,.xlsx,.xls,.xml,.yaml,.yml"
                     onChange={handleFileSelect}
                     className="hidden"
                     id="file-input"
@@ -355,7 +353,9 @@ export function ItineraryImporter() {
             <CardContent className="text-xs text-muted-foreground space-y-1">
               <div><strong>JSON:</strong> {"{"}"name": "Roma", "time": "09:00", "type": "Museo"{"}"}</div>
               <div><strong>CSV:</strong> name,time,type,address</div>
-              <div><strong>Testo:</strong> 09:00 - Colosseo</div>
+              <div><strong>TXT:</strong> 09:00 - Colosseo</div>
+              <div><strong>Excel:</strong> Fogli di calcolo con colonne strutturate</div>
+              <div><strong>XML/YAML:</strong> Formati strutturati per itinerari complessi</div>
             </CardContent>
           </Card>
         </div>

@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ItineraryItem } from "@/types/itinerary";
 import { Star, Navigation as NavigationIcon, Trash2, GripVertical } from "lucide-react";
-import { useItineraryStore } from "@/store/itineraryStore";
+import { useDeleteItineraryItem } from "@/hooks/useTrips";
 import { toast } from "sonner";
 
 interface DraggableItineraryItemProps {
@@ -15,7 +15,7 @@ interface DraggableItineraryItemProps {
 }
 
 export function DraggableItineraryItem({ item, dayId, index }: DraggableItineraryItemProps) {
-  const { removeItineraryItem } = useItineraryStore();
+  const deleteItem = useDeleteItineraryItem();
   
   const {
     attributes,
@@ -32,8 +32,7 @@ export function DraggableItineraryItem({ item, dayId, index }: DraggableItinerar
   };
 
   const handleRemove = () => {
-    removeItineraryItem(dayId, item.id);
-    toast.success(`${item.name} rimosso dall'itinerario`);
+    deleteItem.mutate(item.id);
   };
 
   const handleNavigate = () => {

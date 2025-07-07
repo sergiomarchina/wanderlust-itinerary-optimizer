@@ -19,15 +19,19 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Calendar, Map, Star, Navigation as NavigationIcon, Plus, Search, RotateCcw, Share2 } from "lucide-react";
-import { useItineraryStore } from "@/store/itineraryStore";
 import { DraggableItineraryItem } from "@/components/DraggableItineraryItem";
 import { WeatherWidget } from "@/components/WeatherWidget";
 import { ExpenseTracker } from "@/components/ExpenseTracker";
+import { ItineraryImporter } from "@/components/ItineraryImporter";
+import { useTrips, useUpdateItemsOrder } from "@/hooks/useTrips";
 import { toast } from "sonner";
 
 export default function Itinerary() {
-  const { currentTrip, reorderItineraryItems } = useItineraryStore();
+  const { data: trips, isLoading } = useTrips();
+  const updateItemsOrder = useUpdateItemsOrder();
   const [searchTerm, setSearchTerm] = useState("");
+
+  const currentTrip = trips?.[0]; // Use the first trip as current for now
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -40,11 +44,22 @@ export default function Itinerary() {
     })
   );
 
-  if (!currentTrip) {
+  if (isLoading) {
     return (
       <div className="text-center py-12">
+        <h2 className="text-2xl font-bold mb-4">Caricamento...</h2>
+      </div>
+    );
+  }
+
+  if (!currentTrip) {
+    return (
+      <div className="text-center py-12 space-y-6">
         <h2 className="text-2xl font-bold mb-4">Nessun viaggio attivo</h2>
-        <p className="text-muted-foreground">Crea un nuovo viaggio per iniziare!</p>
+        <p className="text-muted-foreground">Importa un itinerario o crea un nuovo viaggio per iniziare!</p>
+        <div className="max-w-md mx-auto">
+          <ItineraryImporter />
+        </div>
       </div>
     );
   }
@@ -59,7 +74,7 @@ export default function Itinerary() {
       const newIndex = currentDay.items.findIndex(item => item.id === over?.id);
 
       const newItems = arrayMove(currentDay.items, oldIndex, newIndex);
-      reorderItineraryItems(currentDay.id, newItems);
+      updateItemsOrder.mutate({ dayId: currentDay.id, items: newItems });
       
       toast.success("Itinerario riordinato!");
     }
@@ -125,10 +140,7 @@ export default function Itinerary() {
             <Share2 className="mr-2 h-4 w-4" />
             Condividi
           </Button>
-          <Button variant="gradient">
-            <Plus className="mr-2 h-4 w-4" />
-            Aggiungi tappa
-          </Button>
+          <ItineraryImporter />
         </div>
       </div>
 
@@ -189,10 +201,7 @@ export default function Itinerary() {
               <p className="text-muted-foreground mb-4">
                 Aggiungi la tua prima destinazione per iniziare l'avventura!
               </p>
-              <Button variant="gradient">
-                <Plus className="mr-2 h-4 w-4" />
-                Aggiungi prima tappa
-              </Button>
+              <ItineraryImporter />
             </CardContent>
           </Card>
         )}
