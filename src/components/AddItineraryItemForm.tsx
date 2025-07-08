@@ -7,7 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Plus } from "lucide-react";
-import { useItineraryStore } from "@/store/itineraryStore";
+import { useTrips } from "@/hooks/useTrips";
+import { useAddItineraryItem } from "@/hooks/useAddItineraryItem";
 import { toast } from "sonner";
 
 interface AddItemFormData {
@@ -31,8 +32,9 @@ export function AddItineraryItemForm() {
     estimatedCost: "€0",
     notes: ""
   });
-  
-  const { addItineraryItem, currentTrip } = useItineraryStore();
+  const { data: trips } = useTrips();
+  const addItem = useAddItineraryItem();
+  const currentTrip = trips?.[0]; // Use the first trip as current
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,21 +66,31 @@ export function AddItineraryItemForm() {
       notes: formData.notes
     };
 
-    addItineraryItem(currentTrip.days[0].id, newItem);
-    toast.success(`${formData.name} aggiunto all'itinerario!`);
-    
-    // Reset form
-    setFormData({
-      name: "",
-      time: "",
-      duration: "2 ore",
-      type: "Attrazione",
-      address: "",
-      estimatedCost: "€0",
-      notes: ""
+    // Add the item using React Query mutation
+    addItem.mutate({ 
+      dayId: currentTrip.days[0].id, 
+      item: newItem 
+    }, {
+      onSuccess: () => {
+        toast.success(`${formData.name} aggiunto all'itinerario!`);
+        
+        // Reset form
+        setFormData({
+          name: "",
+          time: "",
+          duration: "2 ore",
+          type: "Attrazione",
+          address: "",
+          estimatedCost: "€0",
+          notes: ""
+        });
+        
+        setIsOpen(false);
+      },
+      onError: () => {
+        toast.error("Errore nell'aggiungere la tappa");
+      }
     });
-    
-    setIsOpen(false);
   };
 
   const getEmojiForType = (type: string): string => {
@@ -217,8 +229,8 @@ export function AddItineraryItemForm() {
             <Button type="button" variant="outline" onClick={() => setIsOpen(false)} className="flex-1">
               Annulla
             </Button>
-            <Button type="submit" variant="gradient" className="flex-1">
-              Aggiungi Tappa
+            <Button type="submit" variant="gradient" className="flex-1" disabled={addItem.isPending}>
+              {addItem.isPending ? "Aggiungendo..." : "Aggiungi Tappa"}
             </Button>
           </div>
         </form>
