@@ -1,14 +1,30 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Star, Map, Calendar, Users, Plus } from "lucide-react";
+import { Search, Star, Map, Calendar, Users, Plus, MapPin, Navigation as NavigationIcon } from "lucide-react";
 import { useItineraryStore } from "@/store/itineraryStore";
+import { useGeolocation } from "@/hooks/useGeolocation";
+import { PlaceInfoDialog } from "@/components/PlaceInfoDialog";
+import { ItineraryItem } from "@/types/itinerary";
 import { toast } from "sonner";
 
-const places = [
+interface Place {
+  id: number;
+  name: string;
+  location: string;
+  rating: number;
+  reviews: number;
+  image: string;
+  category: string;
+  duration: string;
+  price: string;
+  distance?: number;
+}
+
+const places: Place[] = [
   {
     id: 1,
     name: "Torre di Pisa",
@@ -66,9 +82,27 @@ const categories = [
 export default function Discover() {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
+  const [selectedPlace, setSelectedPlace] = useState<ItineraryItem | null>(null);
+  const [showPlaceInfo, setShowPlaceInfo] = useState(false);
+  const [nearbyPlaces, setNearbyPlaces] = useState<Place[]>(places);
   const { addItineraryItem, currentTrip } = useItineraryStore();
+  const { latitude, longitude, error: geoError, loading: geoLoading } = useGeolocation();
 
-  const addToItinerary = (place: any) => {
+  // Simula il recupero di luoghi basati sulla posizione
+  useEffect(() => {
+    if (latitude && longitude) {
+      // Simula il filtraggio per distanza (in un'app reale faresti una chiamata API)
+      const placesWithDistance = places.map(place => ({
+        ...place,
+        distance: Math.random() * 50 + 1, // Simula distanza in km
+      })).sort((a, b) => a.distance - b.distance);
+      
+      setNearbyPlaces(placesWithDistance);
+      toast.success("Luoghi nelle vicinanze aggiornati!");
+    }
+  }, [latitude, longitude]);
+
+  const addToItinerary = (place: Place) => {
     if (!currentTrip || !currentTrip.days[0]) {
       toast.error("Nessun viaggio attivo trovato");
       return;
@@ -83,8 +117,8 @@ export default function Discover() {
       rating: place.rating,
       image: place.image,
       location: {
-        lat: 43.7731, // Default coordinates
-        lng: 11.2560,
+        lat: 43.7731 + (Math.random() - 0.5) * 0.1, // Coordinate casuali vicine
+        lng: 11.2560 + (Math.random() - 0.5) * 0.1,
         address: place.location
       },
       estimatedCost: place.price
@@ -94,7 +128,28 @@ export default function Discover() {
     toast.success(`${place.name} aggiunto all'itinerario!`);
   };
 
-  const filteredPlaces = places.filter(place => {
+  const handlePlaceClick = (place: Place) => {
+    const itemPlace: ItineraryItem = {
+      id: place.id.toString(),
+      name: place.name,
+      time: "14:00",
+      duration: place.duration,
+      type: place.category,
+      rating: place.rating,
+      image: place.image,
+      location: {
+        lat: 43.7731 + (Math.random() - 0.5) * 0.1,
+        lng: 11.2560 + (Math.random() - 0.5) * 0.1,
+        address: place.location
+      },
+      estimatedCost: place.price
+    };
+    
+    setSelectedPlace(itemPlace);
+    setShowPlaceInfo(true);
+  };
+
+  const filteredPlaces = nearbyPlaces.filter(place => {
     const matchesSearch = place.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          place.location.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = activeCategory === "all" || 
@@ -107,7 +162,26 @@ export default function Discover() {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold mb-2">Scopri nuovi luoghi</h1>
-        <p className="text-muted-foreground">Trova le migliori attrazioni per il tuo viaggio</p>
+        <div className="flex items-center gap-4">
+          <p className="text-muted-foreground">Trova le migliori attrazioni per il tuo viaggio</p>
+          {geoLoading && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <NavigationIcon className="h-4 w-4 animate-spin" />
+              Rilevamento posizione...
+            </div>
+          )}
+          {latitude && longitude && (
+            <div className="flex items-center gap-2 text-sm text-primary">
+              <MapPin className="h-4 w-4" />
+              Posizione rilevata
+            </div>
+          )}
+          {geoError && (
+            <div className="text-sm text-destructive">
+              {geoError}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Search */}
@@ -156,7 +230,7 @@ export default function Discover() {
         <TabsContent value="recommendations" className="space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {filteredPlaces.map((place) => (
-              <Card key={place.id} className="shadow-card-custom hover:shadow-travel transition-all duration-300 cursor-pointer group border-0">
+              <Card key={place.id} className="shadow-card-custom hover:shadow-travel transition-all duration-300 cursor-pointer group border-0" onClick={() => handlePlaceClick(place)}>
                 <CardContent className="p-6">
                   <div className="flex items-start space-x-4">
                     <div className="text-4xl">{place.image}</div>
@@ -166,7 +240,14 @@ export default function Discover() {
                           <h3 className="font-semibold text-lg group-hover:text-primary transition-colors">
                             {place.name}
                           </h3>
-                          <p className="text-sm text-muted-foreground">{place.location}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm text-muted-foreground">{place.location}</p>
+                            {place.distance && (
+                              <Badge variant="outline" className="text-xs">
+                                {place.distance.toFixed(1)} km
+                              </Badge>
+                            )}
+                          </div>
                         </div>
                         <Badge variant="secondary">{place.category}</Badge>
                       </div>
@@ -184,7 +265,7 @@ export default function Discover() {
                         <div className="font-medium text-primary">{place.price}</div>
                       </div>
 
-                      <div className="flex gap-2">
+                      <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                         <Button size="sm" variant="gradient" className="flex-1" onClick={() => addToItinerary(place)}>
                           <Plus className="mr-2 h-4 w-4" />
                           Aggiungi all'itinerario
@@ -216,14 +297,71 @@ export default function Discover() {
         <TabsContent value="nearby" className="space-y-4">
           <Card className="shadow-card-custom border-0">
             <CardHeader>
-              <CardTitle>📍 Scopri cosa c'è vicino a te</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                📍 Scopri cosa c'è vicino a te
+                {geoLoading && <NavigationIcon className="h-4 w-4 animate-spin" />}
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground">Contenuto in sviluppo...</p>
+              {geoError ? (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground mb-4">{geoError}</p>
+                  <p className="text-sm text-muted-foreground">
+                    Abilita la geolocalizzazione per vedere i luoghi nelle tue vicinanze
+                  </p>
+                </div>
+              ) : latitude && longitude ? (
+                <div className="space-y-4">
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Luoghi ordinati per distanza dalla tua posizione
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {nearbyPlaces.slice(0, 6).map((place) => (
+                      <Card key={place.id} className="cursor-pointer hover:shadow-md transition-all" onClick={() => handlePlaceClick(place)}>
+                        <CardContent className="p-4">
+                          <div className="flex items-center gap-3">
+                            <div className="text-2xl">{place.image}</div>
+                            <div className="flex-1">
+                              <h4 className="font-medium">{place.name}</h4>
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <span>{place.distance?.toFixed(1)} km</span>
+                                <span>•</span>
+                                <span>{place.rating} ⭐</span>
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <NavigationIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground mb-2">Rilevamento posizione in corso...</p>
+                  <p className="text-sm text-muted-foreground">
+                    Assicurati di aver abilitato la geolocalizzazione
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
+      
+      <PlaceInfoDialog
+        place={selectedPlace}
+        isOpen={showPlaceInfo}
+        onClose={() => setShowPlaceInfo(false)}
+        onNavigate={(place) => {
+          if (place.location) {
+            const { lat, lng } = place.location;
+            const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+            window.open(url, '_blank');
+            toast.success(`Navigazione avviata verso ${place.name}`);
+          }
+        }}
+      />
     </div>
   );
 }

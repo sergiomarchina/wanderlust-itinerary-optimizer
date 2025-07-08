@@ -4,8 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ItineraryItem } from "@/types/itinerary";
-import { Star, Navigation as NavigationIcon, Trash2, GripVertical } from "lucide-react";
+import { Star, Navigation as NavigationIcon, Trash2, GripVertical, Info } from "lucide-react";
 import { useDeleteItineraryItem } from "@/hooks/useTrips";
+import { PlaceInfoDialog } from "@/components/PlaceInfoDialog";
+import { useState } from "react";
 import { toast } from "sonner";
 
 interface DraggableItineraryItemProps {
@@ -16,6 +18,7 @@ interface DraggableItineraryItemProps {
 
 export function DraggableItineraryItem({ item, dayId, index }: DraggableItineraryItemProps) {
   const deleteItem = useDeleteItineraryItem();
+  const [showPlaceInfo, setShowPlaceInfo] = useState(false);
   
   const {
     attributes,
@@ -35,9 +38,16 @@ export function DraggableItineraryItem({ item, dayId, index }: DraggableItinerar
     deleteItem.mutate(item.id);
   };
 
-  const handleNavigate = () => {
-    toast.info(`Navigando verso ${item.name}...`);
-    // Qui integreresti la navigazione reale
+  const handleNavigate = (place?: ItineraryItem) => {
+    const targetPlace = place || item;
+    if (targetPlace.location) {
+      const { lat, lng } = targetPlace.location;
+      const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+      window.open(url, '_blank');
+      toast.success(`Navigazione avviata verso ${targetPlace.name}`);
+    } else {
+      toast.info(`Navigando verso ${targetPlace.name}...`);
+    }
   };
 
   return (
@@ -90,9 +100,13 @@ export function DraggableItineraryItem({ item, dayId, index }: DraggableItinerar
               )}
 
               <div className="flex gap-2">
-                <Button size="sm" variant="gradient" onClick={handleNavigate}>
+                <Button size="sm" variant="gradient" onClick={() => handleNavigate()}>
                   <NavigationIcon className="mr-2 h-4 w-4" />
                   Naviga
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => setShowPlaceInfo(true)}>
+                  <Info className="mr-2 h-4 w-4" />
+                  Info
                 </Button>
                 <Button size="sm" variant="outline">
                   <Star className="mr-2 h-4 w-4" />
@@ -112,6 +126,13 @@ export function DraggableItineraryItem({ item, dayId, index }: DraggableItinerar
           </div>
         </CardContent>
       </Card>
+      
+      <PlaceInfoDialog
+        place={item}
+        isOpen={showPlaceInfo}
+        onClose={() => setShowPlaceInfo(false)}
+        onNavigate={handleNavigate}
+      />
     </div>
   );
 }

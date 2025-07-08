@@ -23,6 +23,7 @@ import { DraggableItineraryItem } from "@/components/DraggableItineraryItem";
 import { WeatherWidget } from "@/components/WeatherWidget";
 import { ExpenseTracker } from "@/components/ExpenseTracker";
 import { ItineraryImporter } from "@/components/ItineraryImporter";
+import { TripSelector } from "@/components/TripSelector";
 import { useTrips, useUpdateItemsOrder } from "@/hooks/useTrips";
 import { toast } from "sonner";
 
@@ -132,6 +133,7 @@ export default function Itinerary() {
           </p>
         </div>
         <div className="flex gap-3">
+          <TripSelector />
           <Button variant="outline">
             <Calendar className="mr-2 h-4 w-4" />
             Cambia data
