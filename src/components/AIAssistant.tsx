@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Bot, Send, Loader2 } from "lucide-react";
+import { Bot, Send, Loader2, MapPin, Clock } from "lucide-react";
 import { toast } from "sonner";
 
 interface Message {
@@ -16,7 +16,7 @@ export function AIAssistant() {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: 'Ciao! Sono il tuo assistente AI per i viaggi. Posso aiutarti a pianificare il tuo itinerario, suggerire luoghi da visitare e ottimizzare i tuoi percorsi. Come posso aiutarti oggi?'
+      content: 'Ciao! Sono TravelBot, il tuo assistente AI specializzato in viaggi! 🌍 Posso aiutarti a pianificare itinerari, suggerire luoghi da visitare, consigliarti sui trasporti e molto altro. Dimmi, che tipo di viaggio stai pianificando?'
     }
   ]);
   const [input, setInput] = useState('');
@@ -31,34 +31,50 @@ export function AIAssistant() {
     setIsLoading(true);
 
     try {
-      // Simulated AI response - in production this would call an actual AI service
-      await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 1000));
+      // Call the Supabase Edge Function for AI response
+      const response = await fetch('https://zctpvjfrbstoftxjowfd.supabase.co/functions/v1/travel-assistant', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpjdHB2amZyYnN0b2Z0eGpvd2ZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE0NjI0ODMsImV4cCI6MjA2NzAzODQ4M30.5HgTLEmkGLPx-hB82tB94fIIqANFoZvHAcGr8u3CGTo`
+        },
+        body: JSON.stringify({
+          message: userMessage,
+          conversation: messages.slice(1) // Exclude initial greeting
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
       
-      const responses = [
-        "Ottima domanda! Basandomi sui tuoi interessi, ti consiglio di visitare...",
-        "Per ottimizzare il tuo itinerario, suggerisco di raggruppare le attrazioni per zona...",
-        "Ho trovato alcuni luoghi interessanti nelle vicinanze che potresti aggiungere...",
-        "Per quella destinazione, il periodo migliore per visitarla è...",
-        "Ti consiglio di prenotare in anticipo per evitare code lunghe...",
-        "Basandomi sulle recensioni recenti, questo posto è molto apprezzato per...",
-        "Per il trasporto, la soluzione più efficiente sarebbe...",
-        "Ho alcune raccomandazioni per ristoranti locali autentici..."
-      ];
-      
-      const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-      
-      setMessages(prev => [...prev, { 
-        role: 'assistant', 
-        content: randomResponse + " " + userMessage.toLowerCase().includes('dove') ? 
-          "Posso anche cercare informazioni specifiche su Google Maps se me lo chiedi!" : 
-          "Vuoi che cerchi informazioni più dettagliate?" 
-      }]);
+      if (data.success) {
+        setMessages(prev => [...prev, { 
+          role: 'assistant', 
+          content: data.response 
+        }]);
+      } else {
+        // Use fallback response if AI service fails
+        setMessages(prev => [...prev, { 
+          role: 'assistant', 
+          content: data.response || 'Mi dispiace, al momento sto avendo difficoltà tecniche. Puoi riprovare tra poco!' 
+        }]);
+        
+        if (data.error) {
+          console.error('AI Assistant Error:', data.error);
+        }
+      }
       
     } catch (error) {
+      console.error('Error contacting AI assistant:', error);
       toast.error('Errore nel contattare l\'assistente AI');
+      
+      // Provide a helpful fallback response
       setMessages(prev => [...prev, { 
         role: 'assistant', 
-        content: 'Mi dispiace, al momento non riesco a rispondere. Riprova tra poco!' 
+        content: 'Mi dispiace, al momento non riesco a connettermi ai miei servizi AI. Tuttavia posso comunque aiutarti con consigli di base! Prova a essere più specifico sulla tua destinazione o su cosa stai cercando. 🗺️' 
       }]);
     } finally {
       setIsLoading(false);
@@ -81,14 +97,14 @@ export function AIAssistant() {
           className="fixed bottom-20 right-6 rounded-full shadow-travel z-[9999]"
         >
           <Bot className="mr-2 h-5 w-5" />
-          Assistente AI
+          TravelBot AI
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Bot className="h-5 w-5 text-primary" />
-            Assistente AI per Viaggi
+            TravelBot - Assistente AI per Viaggi
           </DialogTitle>
         </DialogHeader>
         
@@ -115,7 +131,7 @@ export function AIAssistant() {
               <div className="flex justify-start">
                 <div className="bg-card border p-3 rounded-lg flex items-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  <p className="text-sm">L'assistente sta pensando...</p>
+                  <p className="text-sm">TravelBot sta elaborando la risposta...</p>
                 </div>
               </div>
             )}
@@ -127,7 +143,7 @@ export function AIAssistant() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="Chiedi consigli per il tuo viaggio..."
+              placeholder="Es: 'Consigli per 3 giorni a Roma' o 'Migliori ristoranti a Firenze'"
               disabled={isLoading}
               className="flex-1"
             />
