@@ -160,7 +160,21 @@ export default function Discover() {
     setShowPlaceInfo(true);
   };
 
-  const filteredPlaces = nearbyPlaces.filter(place => {
+  // Combina luoghi mock e Google Maps per la visualizzazione
+  const allPlaces = [...nearbyPlaces, ...googlePlaces.map(gPlace => ({
+    id: parseInt(gPlace.id),
+    name: gPlace.name,
+    location: gPlace.address,
+    rating: gPlace.rating,
+    reviews: 100 + Math.floor(Math.random() * 1000),
+    image: "📍",
+    category: gPlace.types[0]?.replace(/_/g, ' ') || "Attrazione",
+    duration: "1-2 ore",
+    price: gPlace.price_level ? '€'.repeat(gPlace.price_level + 1) : "Gratis",
+    distance: Math.random() * 5 + 0.5
+  }))];
+
+  const filteredPlaces = allPlaces.filter(place => {
     const matchesSearch = place.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          place.location.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = activeCategory === "all" || 
@@ -335,8 +349,8 @@ export default function Discover() {
                   <p className="text-sm text-muted-foreground mb-4">
                     Luoghi ordinati per distanza dalla tua posizione
                   </p>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {nearbyPlaces.slice(0, 6).map((place) => (
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {allPlaces.slice(0, 6).map((place) => (
                       <Card key={place.id} className="cursor-pointer hover:shadow-md transition-all" onClick={() => handlePlaceClick(place)}>
                         <CardContent className="p-4">
                           <div className="flex items-center gap-3">

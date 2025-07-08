@@ -78,7 +78,7 @@ export function AIAssistant() {
         <Button 
           variant="gradient" 
           size="lg" 
-          className="fixed bottom-6 right-6 rounded-full shadow-travel z-50"
+          className="fixed bottom-20 right-6 rounded-full shadow-travel z-[9999]"
         >
           <Bot className="mr-2 h-5 w-5" />
           Assistente AI

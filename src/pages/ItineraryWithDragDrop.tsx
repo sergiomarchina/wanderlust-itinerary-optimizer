@@ -25,6 +25,7 @@ import { ExpenseTracker } from "@/components/ExpenseTracker";
 import { ItineraryImporter } from "@/components/ItineraryImporter";
 import { TripSelector } from "@/components/TripSelector";
 import { AIAssistant } from "@/components/AIAssistant";
+import { AddItineraryItemForm } from "@/components/AddItineraryItemForm";
 import { useTrips, useUpdateItemsOrder } from "@/hooks/useTrips";
 import { toast } from "sonner";
 
@@ -143,6 +144,7 @@ export default function Itinerary() {
             <Share2 className="mr-2 h-4 w-4" />
             Condividi
           </Button>
+          <AddItineraryItemForm />
           <ItineraryImporter />
         </div>
       </div>
@@ -204,7 +206,10 @@ export default function Itinerary() {
               <p className="text-muted-foreground mb-4">
                 Aggiungi la tua prima destinazione per iniziare l'avventura!
               </p>
-              <ItineraryImporter />
+              <div className="flex flex-col gap-3">
+                <ItineraryImporter />
+                <AddItineraryItemForm />
+              </div>
             </CardContent>
           </Card>
         )}

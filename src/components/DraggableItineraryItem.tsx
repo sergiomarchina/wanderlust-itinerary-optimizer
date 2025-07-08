@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ItineraryItem } from "@/types/itinerary";
-import { Star, Navigation as NavigationIcon, Trash2, GripVertical, Info } from "lucide-react";
+import { Star, Navigation as NavigationIcon, Trash2, GripVertical, Info, Edit } from "lucide-react";
 import { useDeleteItineraryItem } from "@/hooks/useTrips";
 import { PlaceInfoDialog } from "@/components/PlaceInfoDialog";
+import { EditItineraryItemForm } from "@/components/EditItineraryItemForm";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -19,6 +20,7 @@ interface DraggableItineraryItemProps {
 export function DraggableItineraryItem({ item, dayId, index }: DraggableItineraryItemProps) {
   const deleteItem = useDeleteItineraryItem();
   const [showPlaceInfo, setShowPlaceInfo] = useState(false);
+  const [showEditForm, setShowEditForm] = useState(false);
   
   const {
     attributes,
@@ -108,6 +110,10 @@ export function DraggableItineraryItem({ item, dayId, index }: DraggableItinerar
                   <Info className="mr-2 h-4 w-4" />
                   Info
                 </Button>
+                <Button size="sm" variant="outline" onClick={() => setShowEditForm(true)}>
+                  <Edit className="mr-2 h-4 w-4" />
+                  Modifica
+                </Button>
                 <Button size="sm" variant="outline">
                   <Star className="mr-2 h-4 w-4" />
                   Salva
@@ -132,6 +138,13 @@ export function DraggableItineraryItem({ item, dayId, index }: DraggableItinerar
         isOpen={showPlaceInfo}
         onClose={() => setShowPlaceInfo(false)}
         onNavigate={handleNavigate}
+      />
+      
+      <EditItineraryItemForm
+        item={item}
+        isOpen={showEditForm}
+        onClose={() => setShowEditForm(false)}
+        dayId={dayId}
       />
     </div>
   );
