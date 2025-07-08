@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, Star, Map, Calendar, Users, Plus, MapPin, Navigation as NavigationIcon } from "lucide-react";
 import { useItineraryStore } from "@/store/itineraryStore";
 import { useGeolocation } from "@/hooks/useGeolocation";
+import { useGoogleMaps } from "@/hooks/useGoogleMaps";
 import { PlaceInfoDialog } from "@/components/PlaceInfoDialog";
 import { ItineraryItem } from "@/types/itinerary";
 import { toast } from "sonner";
@@ -87,20 +88,30 @@ export default function Discover() {
   const [nearbyPlaces, setNearbyPlaces] = useState<Place[]>(places);
   const { addItineraryItem, currentTrip } = useItineraryStore();
   const { latitude, longitude, error: geoError, loading: geoLoading } = useGeolocation();
+  const { searchNearbyPlaces, places: googlePlaces, isLoading: placesLoading } = useGoogleMaps();
 
-  // Simula il recupero di luoghi basati sulla posizione
+  // Recupera luoghi basati sulla posizione usando Google Maps
   useEffect(() => {
     if (latitude && longitude) {
-      // Simula il filtraggio per distanza (in un'app reale faresti una chiamata API)
-      const placesWithDistance = places.map(place => ({
-        ...place,
-        distance: Math.random() * 50 + 1, // Simula distanza in km
-      })).sort((a, b) => a.distance - b.distance);
-      
-      setNearbyPlaces(placesWithDistance);
+      searchNearbyPlaces({
+        location: { lat: latitude, lng: longitude },
+        radius: 5000, // 5km radius
+        type: activeCategory !== "all" ? activeCategory : undefined
+      });
       toast.success("Luoghi nelle vicinanze aggiornati!");
     }
-  }, [latitude, longitude]);
+  }, [latitude, longitude, activeCategory]);
+
+  const handleSearch = () => {
+    if (searchTerm.trim()) {
+      searchNearbyPlaces({
+        query: searchTerm,
+        location: latitude && longitude ? { lat: latitude, lng: longitude } : undefined,
+        radius: 10000, // 10km radius for search
+        type: activeCategory !== "all" ? activeCategory : undefined
+      });
+    }
+  };
 
   const addToItinerary = (place: Place) => {
     if (!currentTrip || !currentTrip.days[0]) {
@@ -193,8 +204,17 @@ export default function Discover() {
               placeholder="Cerca destinazioni, città, attrazioni..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
               className="pl-10"
             />
+            <Button 
+              onClick={handleSearch} 
+              disabled={placesLoading}
+              className="absolute right-2 top-1/2 transform -translate-y-1/2"
+              size="sm"
+            >
+              <Search className="h-4 w-4" />
+            </Button>
           </div>
         </CardContent>
       </Card>

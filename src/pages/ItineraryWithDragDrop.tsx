@@ -24,6 +24,7 @@ import { WeatherWidget } from "@/components/WeatherWidget";
 import { ExpenseTracker } from "@/components/ExpenseTracker";
 import { ItineraryImporter } from "@/components/ItineraryImporter";
 import { TripSelector } from "@/components/TripSelector";
+import { AIAssistant } from "@/components/AIAssistant";
 import { useTrips, useUpdateItemsOrder } from "@/hooks/useTrips";
 import { toast } from "sonner";
 
@@ -241,6 +242,8 @@ export default function Itinerary() {
           <ExpenseTracker />
         </div>
       </div>
+      
+      <AIAssistant />
     </div>
   );
 }

@@ -47,32 +47,49 @@ export const useCreateTrip = () => {
   });
 };
 
-// Update trip items order (temporary implementation)
+// Update trip items order
 export const useUpdateItemsOrder = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
     mutationFn: async ({ dayId, items }: { dayId: string, items: ItineraryItem[] }) => {
-      // Temporary implementation - just show success
-      toast.success('Ordine aggiornato!');
+      const storedTrips = JSON.parse(localStorage.getItem('travel-trips') || '[]') as Trip[];
+      const updatedTrips = storedTrips.map(trip => ({
+        ...trip,
+        days: trip.days.map(day => 
+          day.id === dayId ? { ...day, items } : day
+        )
+      }));
+      localStorage.setItem('travel-trips', JSON.stringify(updatedTrips));
+      return updatedTrips;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['trips'] });
+      toast.success('Ordine aggiornato!');
     }
   });
 };
 
-// Delete itinerary item (temporary implementation)
+// Delete itinerary item
 export const useDeleteItineraryItem = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
     mutationFn: async (itemId: string) => {
-      // Temporary implementation - just show success
-      toast.success('Elemento rimosso dall\'itinerario');
+      const storedTrips = JSON.parse(localStorage.getItem('travel-trips') || '[]') as Trip[];
+      const updatedTrips = storedTrips.map(trip => ({
+        ...trip,
+        days: trip.days.map(day => ({
+          ...day,
+          items: day.items.filter(item => item.id !== itemId)
+        }))
+      }));
+      localStorage.setItem('travel-trips', JSON.stringify(updatedTrips));
+      return updatedTrips;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['trips'] });
+      toast.success('Elemento rimosso dall\'itinerario');
     }
   });
 };
