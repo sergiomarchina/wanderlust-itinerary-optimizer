@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { CalendarDays, MapPin, Users, Plus, Calendar } from "lucide-react";
 import { useTrips, useCreateTrip } from "@/hooks/useTrips";
 import { useItineraryStore } from "@/store/itineraryStore";
-import { Trip } from "@/types/itinerary";
+import { Trip, TravelDay } from "@/types/itinerary";
 import { toast } from "sonner";
 
 export function TripSelector() {
@@ -37,19 +37,26 @@ export function TripSelector() {
       return;
     }
 
+    const days: TravelDay[] = [];
+    const currentDate = new Date(formData.startDate);
+    const endDate = new Date(formData.endDate);
+
+    while (currentDate <= endDate) {
+      days.push({
+        id: `day-${currentDate.getTime()}`,
+        date: currentDate.toISOString().split('T')[0],
+        items: []
+      });
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
     const newTrip: Omit<Trip, 'id'> = {
       name: formData.name,
       startDate: formData.startDate,
       endDate: formData.endDate,
       participants: formData.participants,
       status: 'planning' as const,
-      days: [
-        {
-          id: `day-${Date.now()}`,
-          date: formData.startDate,
-          items: []
-        }
-      ]
+      days
     };
 
     createTrip.mutate(newTrip, {
