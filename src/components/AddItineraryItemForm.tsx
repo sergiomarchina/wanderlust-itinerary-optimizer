@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -35,11 +35,26 @@ export function AddItineraryItemForm() {
   const { data: trips } = useTrips();
   const addItem = useAddItineraryItem();
   const currentTrip = trips?.[0]; // Use the first trip as current
+  const [dayId, setDayId] = useState<string>("");
+
+  const leastBusyDayId = currentTrip && currentTrip.days.length > 0
+    ? currentTrip.days.reduce((prev, curr) =>
+        curr.items.length < prev.items.length ? curr : prev
+      ).id
+    : "";
+
+  useEffect(() => {
+    if (isOpen) {
+      setDayId(leastBusyDayId);
+    }
+  }, [isOpen, leastBusyDayId]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!currentTrip || !currentTrip.days[0]) {
+
+    const targetDayId = dayId || leastBusyDayId;
+
+    if (!currentTrip || !targetDayId) {
       toast.error("Nessun viaggio attivo trovato");
       return;
     }
@@ -49,10 +64,19 @@ export function AddItineraryItemForm() {
       return;
     }
 
+    const targetDay = currentTrip.days.find((d) => d.id === targetDayId);
+
+    const getNextAvailableTime = () => {
+      if (!targetDay) return "09:00";
+      const hour = 9 + targetDay.items.length * 2;
+      const adjusted = hour % 24;
+      return `${adjusted.toString().padStart(2, "0")}:00`;
+    };
+
     const newItem = {
       id: Date.now().toString(),
       name: formData.name,
-      time: formData.time || `${9 + currentTrip.days[0].items.length}:00`,
+      time: formData.time || getNextAvailableTime(),
       duration: formData.duration,
       type: formData.type,
       rating: 4.0,
@@ -67,9 +91,9 @@ export function AddItineraryItemForm() {
     };
 
     // Add the item using React Query mutation
-    addItem.mutate({ 
-      dayId: currentTrip.days[0].id, 
-      item: newItem 
+    addItem.mutate({
+      dayId: targetDayId,
+      item: newItem
     }, {
       onSuccess: () => {
         toast.success(`${formData.name} aggiunto all'itinerario!`);
@@ -84,7 +108,8 @@ export function AddItineraryItemForm() {
           estimatedCost: "€0",
           notes: ""
         });
-        
+        setDayId("");
+
         setIsOpen(false);
       },
       onError: () => {
@@ -136,6 +161,22 @@ export function AddItineraryItemForm() {
               placeholder="Es. Duomo di Milano"
               required
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="day">Giorno</Label>
+            <Select value={dayId || leastBusyDayId} onValueChange={setDayId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Seleziona giorno" />
+              </SelectTrigger>
+              <SelectContent>
+                {currentTrip?.days.map((day, idx) => (
+                  <SelectItem key={day.id} value={day.id}>
+                    {`Giorno ${idx + 1} - ${new Date(day.date).toLocaleDateString('it-IT')}`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="grid grid-cols-2 gap-3">

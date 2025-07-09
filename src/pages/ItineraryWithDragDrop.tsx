@@ -23,6 +23,7 @@ import { DraggableItineraryItem } from "@/components/DraggableItineraryItem";
 import { WeatherWidget } from "@/components/WeatherWidget";
 import { ExpenseTracker } from "@/components/ExpenseTracker";
 import { ItineraryImporter } from "@/components/ItineraryImporter";
+import { ItineraryExporter } from "@/components/ItineraryExporter";
 import { TripSelector } from "@/components/TripSelector";
 import { AIAssistant } from "@/components/AIAssistant";
 import { AddItineraryItemForm } from "@/components/AddItineraryItemForm";
@@ -144,6 +145,7 @@ export default function Itinerary() {
             <Share2 className="mr-2 h-4 w-4" />
             Condividi
           </Button>
+          <ItineraryExporter />
           <AddItineraryItemForm />
           <ItineraryImporter />
         </div>

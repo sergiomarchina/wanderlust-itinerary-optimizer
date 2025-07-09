@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Bot, Send, Loader2, MapPin, Clock } from "lucide-react";
 import { toast } from "sonner";
+import { generateGeminiResponse, GeminiMessage } from "@/lib/gemini";
 
 interface Message {
   role: 'user' | 'assistant';
@@ -31,41 +32,17 @@ export function AIAssistant() {
     setIsLoading(true);
 
     try {
-      // Call the Supabase Edge Function for AI response
-      const response = await fetch('https://zctpvjfrbstoftxjowfd.supabase.co/functions/v1/travel-assistant', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpjdHB2amZyYnN0b2Z0eGpvd2ZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE0NjI0ODMsImV4cCI6MjA2NzAzODQ4M30.5HgTLEmkGLPx-hB82tB94fIIqANFoZvHAcGr8u3CGTo`
-        },
-        body: JSON.stringify({
-          message: userMessage,
-          conversation: messages.slice(1) // Exclude initial greeting
-        })
-      });
+      const prompt: GeminiMessage[] = [
+        ...messages,
+        { role: 'user', content: userMessage }
+      ];
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      const aiReply = await generateGeminiResponse(prompt);
 
-      const data = await response.json();
-      
-      if (data.success) {
-        setMessages(prev => [...prev, { 
-          role: 'assistant', 
-          content: data.response 
-        }]);
-      } else {
-        // Use fallback response if AI service fails
-        setMessages(prev => [...prev, { 
-          role: 'assistant', 
-          content: data.response || 'Mi dispiace, al momento sto avendo difficoltà tecniche. Puoi riprovare tra poco!' 
-        }]);
-        
-        if (data.error) {
-          console.error('AI Assistant Error:', data.error);
-        }
-      }
+      setMessages(prev => [
+        ...prev,
+        { role: 'assistant', content: aiReply || 'Mi dispiace, non ho una risposta al momento.' }
+      ]);
       
     } catch (error) {
       console.error('Error contacting AI assistant:', error);
