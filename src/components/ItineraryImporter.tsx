@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Progress } from "@/components/ui/progress";
 import { Upload, FileText, X, Check, AlertCircle } from "lucide-react";
 import { useCreateTrip } from "@/hooks/useTrips";
+import { callTravelAssistant } from "@/lib/travelAssistant";
 import { ItineraryItem, TravelDay, Trip } from "@/types/itinerary";
 import { toast } from "sonner";
 
@@ -182,12 +183,28 @@ export function ItineraryImporter() {
       setImportStatus({ isImporting: true, progress: 50, message: "Analisi contenuto..." });
       
       let trip: Trip | null = null;
-      
+
       if (file.name.endsWith('.json') || file.type === 'application/json') {
         trip = parseJsonItinerary(content);
       } else if (file.name.endsWith('.csv') || file.type === 'text/csv') {
         trip = parseCsvItinerary(content);
-      } else {
+      }
+
+      let aiError = false;
+
+      if (!trip) {
+        setImportStatus({ isImporting: true, progress: 60, message: "Analisi con AI..." });
+        try {
+          const aiPrompt = `Estrai un JSON valido che rappresenti un oggetto Trip dall'input seguente. Rispondi solo con il JSON.\n\n${content}`;
+          const aiResponse = await callTravelAssistant(aiPrompt);
+          trip = parseJsonItinerary(aiResponse) || JSON.parse(aiResponse);
+        } catch (err) {
+          console.error('AI parsing failed', err);
+          aiError = true;
+        }
+      }
+
+      if (!trip) {
         trip = parseTextItinerary(content);
       }
       
@@ -195,21 +212,27 @@ export function ItineraryImporter() {
       
       if (trip) {
         await createTrip.mutateAsync(trip);
-        setImportStatus({ 
-          isImporting: false, 
-          progress: 100, 
-          message: "Importazione completata!", 
-          success: true 
+        setImportStatus({
+          isImporting: false,
+          progress: 100,
+          message: "Importazione completata!",
+          success: true
         });
         setTimeout(() => setIsOpen(false), 2000);
       } else {
-        setImportStatus({ 
-          isImporting: false, 
-          progress: 0, 
-          message: "", 
-          error: "Formato file non riconosciuto" 
+        setImportStatus({
+          isImporting: false,
+          progress: 0,
+          message: "",
+          error: aiError
+            ? "L'AI non ha potuto interpretare il file"
+            : "Formato file non riconosciuto"
         });
-        toast.error("Impossibile importare il file. Verifica il formato.");
+        toast.error(
+          aiError
+            ? "Analisi AI fallita. Impossibile importare il file."
+            : "Impossibile importare il file. Verifica il formato."
+        );
       }
     } catch (error) {
       setImportStatus({ 
