@@ -6,7 +6,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Bot, Send, Loader2, MapPin, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { generateGeminiResponse, GeminiMessage } from "@/lib/gemini";
-import { callTravelAssistant } from "@/lib/travelAssistant";
 
 interface Message {
   role: 'user' | 'assistant';
@@ -33,40 +32,26 @@ export function AIAssistant() {
     setIsLoading(true);
 
     try {
-      const aiReply = await callTravelAssistant(userMessage, messages);
+      const prompt: GeminiMessage[] = [
+        ...messages,
+        { role: 'user', content: userMessage }
+      ];
+
+      const aiReply = await generateGeminiResponse(prompt);
 
       setMessages(prev => [
         ...prev,
         { role: 'assistant', content: aiReply || 'Mi dispiace, non ho una risposta al momento.' }
       ]);
-
+      
     } catch (error) {
       console.error('Error contacting AI assistant:', error);
-
-      // Gemini fallback if API key is provided
-      if (import.meta.env.VITE_GEMINI_API_KEY) {
-        try {
-          const prompt: GeminiMessage[] = [
-            ...messages,
-            { role: 'user', content: userMessage }
-          ];
-          const geminiReply = await generateGeminiResponse(prompt);
-          setMessages(prev => [
-            ...prev,
-            { role: 'assistant', content: geminiReply || 'Mi dispiace, non ho una risposta al momento.' }
-          ]);
-          return;
-        } catch (fallbackError) {
-          console.error('Gemini fallback failed:', fallbackError);
-        }
-      }
-
       toast.error('Errore nel contattare l\'assistente AI');
-
+      
       // Provide a helpful fallback response
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: 'Mi dispiace, al momento non riesco a connettermi ai miei servizi AI. Tuttavia posso comunque aiutarti con consigli di base! Prova a essere più specifico sulla tua destinazione o su cosa stai cercando. 🗺️'
+      setMessages(prev => [...prev, { 
+        role: 'assistant', 
+        content: 'Mi dispiace, al momento non riesco a connettermi ai miei servizi AI. Tuttavia posso comunque aiutarti con consigli di base! Prova a essere più specifico sulla tua destinazione o su cosa stai cercando. 🗺️' 
       }]);
     } finally {
       setIsLoading(false);

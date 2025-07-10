@@ -5,14 +5,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Calendar as CalendarIcon } from "lucide-react";
-import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { cn } from "@/lib/utils";
-import { useQueryClient } from "@tanstack/react-query";
+import { Card, CardContent } from "@/components/ui/card";
+import { Plus } from "lucide-react";
 import { useTrips } from "@/hooks/useTrips";
 import { useAddItineraryItem } from "@/hooks/useAddItineraryItem";
-import { Trip } from "@/types/itinerary";
 import { toast } from "sonner";
 
 interface AddItemFormData {
@@ -38,26 +34,27 @@ export function AddItineraryItemForm() {
   });
   const { data: trips } = useTrips();
   const addItem = useAddItineraryItem();
-  const queryClient = useQueryClient();
   const currentTrip = trips?.[0]; // Use the first trip as current
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>();
+  const [dayId, setDayId] = useState<string>("");
 
-  const leastBusyDay = currentTrip && currentTrip.days.length > 0
+  const leastBusyDayId = currentTrip && currentTrip.days.length > 0
     ? currentTrip.days.reduce((prev, curr) =>
         curr.items.length < prev.items.length ? curr : prev
-      )
-    : undefined;
+      ).id
+    : "";
 
   useEffect(() => {
     if (isOpen) {
-      setSelectedDate(leastBusyDay ? new Date(leastBusyDay.date) : undefined);
+      setDayId(leastBusyDayId);
     }
-  }, [isOpen, leastBusyDay]);
+  }, [isOpen, leastBusyDayId]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!currentTrip || !selectedDate) {
+    const targetDayId = dayId || leastBusyDayId;
+
+    if (!currentTrip || !targetDayId) {
       toast.error("Nessun viaggio attivo trovato");
       return;
     }
@@ -67,23 +64,7 @@ export function AddItineraryItemForm() {
       return;
     }
 
-    const dateString = selectedDate.toISOString().split('T')[0];
-    let targetDay = currentTrip.days.find((d) => d.date === dateString);
-    let targetDayId = targetDay?.id;
-
-    if (!targetDay) {
-      targetDayId = `day-${Date.now()}`;
-      targetDay = { id: targetDayId, date: dateString, items: [] };
-
-      const storedTrips: Trip[] = JSON.parse(localStorage.getItem('travel-trips') || '[]');
-      const updatedTrips = storedTrips.map((trip: Trip) =>
-        trip.id === currentTrip.id
-          ? { ...trip, days: [...trip.days, targetDay] }
-          : trip
-      );
-      localStorage.setItem('travel-trips', JSON.stringify(updatedTrips));
-      queryClient.invalidateQueries({ queryKey: ['trips'] });
-    }
+    const targetDay = currentTrip.days.find((d) => d.id === targetDayId);
 
     const getNextAvailableTime = () => {
       if (!targetDay) return "09:00";
@@ -111,7 +92,7 @@ export function AddItineraryItemForm() {
 
     // Add the item using React Query mutation
     addItem.mutate({
-      dayId: targetDayId!,
+      dayId: targetDayId,
       item: newItem
     }, {
       onSuccess: () => {
@@ -127,7 +108,7 @@ export function AddItineraryItemForm() {
           estimatedCost: "€0",
           notes: ""
         });
-        setSelectedDate(undefined);
+        setDayId("");
 
         setIsOpen(false);
       },
@@ -183,31 +164,19 @@ export function AddItineraryItemForm() {
           </div>
 
           <div className="space-y-2">
-            <Label>Data</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !selectedDate && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {selectedDate
-                    ? new Date(selectedDate).toLocaleDateString('it-IT')
-                    : <span>Seleziona data</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={selectedDate}
-                  onSelect={setSelectedDate}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
+            <Label htmlFor="day">Giorno</Label>
+            <Select value={dayId || leastBusyDayId} onValueChange={setDayId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Seleziona giorno" />
+              </SelectTrigger>
+              <SelectContent>
+                {currentTrip?.days.map((day, idx) => (
+                  <SelectItem key={day.id} value={day.id}>
+                    {`Giorno ${idx + 1} - ${new Date(day.date).toLocaleDateString('it-IT')}`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="grid grid-cols-2 gap-3">

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,15 +26,8 @@ export function EditItineraryItemForm({ item, isOpen, onClose, dayId }: EditItin
     estimatedCost: item.estimatedCost || "€0",
     notes: item.notes || ""
   });
-  const [selectedDayId, setSelectedDayId] = useState(dayId);
-
-  const { currentTrip, updateItineraryItem, addItineraryItem, removeItineraryItem } = useItineraryStore();
-
-  useEffect(() => {
-    if (isOpen) {
-      setSelectedDayId(dayId);
-    }
-  }, [isOpen, dayId]);
+  
+  const { updateItineraryItem } = useItineraryStore();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,15 +46,7 @@ export function EditItineraryItemForm({ item, isOpen, onClose, dayId }: EditItin
       image: getEmojiForType(formData.type)
     };
 
-    const updatedItem = { ...item, ...updates };
-
-    if (selectedDayId !== dayId) {
-      removeItineraryItem(dayId, item.id);
-      addItineraryItem(selectedDayId, updatedItem);
-    } else {
-      updateItineraryItem(dayId, item.id, updates);
-    }
-
+    updateItineraryItem(dayId, item.id, updates);
     toast.success(`${formData.name} aggiornato!`);
     onClose();
   };
@@ -102,22 +87,6 @@ export function EditItineraryItemForm({ item, isOpen, onClose, dayId }: EditItin
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               required
             />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="edit-day">Giorno</Label>
-            <Select value={selectedDayId} onValueChange={setSelectedDayId}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {currentTrip?.days.map((day, idx) => (
-                  <SelectItem key={day.id} value={day.id}>
-                    {`Giorno ${idx + 1} - ${new Date(day.date).toLocaleDateString('it-IT')}`}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
