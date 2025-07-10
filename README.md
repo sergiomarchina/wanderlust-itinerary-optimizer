@@ -62,11 +62,7 @@ This project is built with:
 
 ## Environment variables
 
-Create a `.env` file based on `.env.example` and set the following variables:
-
-- `VITE_GEMINI_API_KEY` - your Google Gemini API key
-- `VITE_SUPABASE_URL` - your Supabase project URL
-- `VITE_SUPABASE_KEY` - your Supabase anonymous key
+Create a `.env` file based on `.env.example` and set `VITE_GEMINI_API_KEY` with your Google Gemini API key.
 
 ## How can I deploy this project?
 

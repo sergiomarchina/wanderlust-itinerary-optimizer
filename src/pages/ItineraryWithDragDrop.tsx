@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   DndContext,
   closestCenter,
@@ -18,13 +18,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Calendar, Map, Star, Navigation as NavigationIcon, Plus, Search, RotateCcw, Share2 } from "lucide-react";
+import { Search, RotateCcw, Share2 } from "lucide-react";
 import { DraggableItineraryItem } from "@/components/DraggableItineraryItem";
 import { WeatherWidget } from "@/components/WeatherWidget";
 import { ExpenseTracker } from "@/components/ExpenseTracker";
 import { ItineraryImporter } from "@/components/ItineraryImporter";
 import { ItineraryExporter } from "@/components/ItineraryExporter";
 import { TripSelector } from "@/components/TripSelector";
+import { DaySelector } from "@/components/DaySelector";
 import { AIAssistant } from "@/components/AIAssistant";
 import { AddItineraryItemForm } from "@/components/AddItineraryItemForm";
 import { useTrips, useUpdateItemsOrder } from "@/hooks/useTrips";
@@ -36,6 +37,13 @@ export default function Itinerary() {
   const [searchTerm, setSearchTerm] = useState("");
 
   const currentTrip = trips?.[0]; // Use the first trip as current for now
+  const [selectedDayId, setSelectedDayId] = useState<string>("");
+
+  useEffect(() => {
+    if (currentTrip && !selectedDayId) {
+      setSelectedDayId(currentTrip.days[0]?.id || "");
+    }
+  }, [currentTrip, selectedDayId]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -68,18 +76,19 @@ export default function Itinerary() {
     );
   }
 
-  const currentDay = currentTrip.days[0]; // Per ora mostriamo solo il primo giorno
+  const currentDay =
+    currentTrip.days.find((d) => d.id === selectedDayId) || currentTrip.days[0];
 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
 
     if (active.id !== over?.id) {
-      const oldIndex = currentDay.items.findIndex(item => item.id === active.id);
-      const newIndex = currentDay.items.findIndex(item => item.id === over?.id);
+      const oldIndex = currentDay.items.findIndex((item) => item.id === active.id);
+      const newIndex = currentDay.items.findIndex((item) => item.id === over?.id);
 
       const newItems = arrayMove(currentDay.items, oldIndex, newIndex);
       updateItemsOrder.mutate({ dayId: currentDay.id, items: newItems });
-      
+
       toast.success("Itinerario riordinato!");
     }
   }
@@ -127,20 +136,22 @@ export default function Itinerary() {
         <div>
           <h1 className="text-3xl font-bold">{currentTrip.name}</h1>
           <p className="text-muted-foreground">
-            {new Date(currentDay.date).toLocaleDateString('it-IT', { 
-              weekday: 'long', 
-              year: 'numeric', 
-              month: 'long', 
-              day: 'numeric' 
-            })} • Giorno 1 di {currentTrip.days.length}
+            {new Date(currentDay.date).toLocaleDateString('it-IT', {
+              weekday: 'long',
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+            })}{" "}
+            • Giorno {currentTrip.days.findIndex((d) => d.id === currentDay.id) + 1} di {currentTrip.days.length}
           </p>
         </div>
         <div className="flex gap-3">
           <TripSelector />
-          <Button variant="outline">
-            <Calendar className="mr-2 h-4 w-4" />
-            Cambia data
-          </Button>
+          <DaySelector
+            days={currentTrip.days}
+            selectedDayId={selectedDayId}
+            onChange={setSelectedDayId}
+          />
           <Button variant="outline" onClick={shareItinerary}>
             <Share2 className="mr-2 h-4 w-4" />
             Condividi
